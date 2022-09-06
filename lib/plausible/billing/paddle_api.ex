@@ -22,19 +22,22 @@ defmodule Plausible.Billing.PaddleApi do
       quantity: 1
     }
 
-    {:ok, response} =
-      HTTPClient.post(
-        vendors_domain() <> "/api/2.0/subscription/preview_update",
-        @headers,
-        Jason.encode!(params)
-      )
+    case HTTPClient.post(
+           vendors_domain() <> "/api/2.0/subscription/preview_update",
+           @headers,
+           Jason.encode!(params)
+         ) do
+      {:ok, response} ->
+        body = Jason.decode!(response.body)
 
-    body = Jason.decode!(response.body)
+        if body["success"] do
+          {:ok, body["response"]}
+        else
+          {:error, body["error"]}
+        end
 
-    if body["success"] do
-      {:ok, body["response"]}
-    else
-      {:error, body["error"]}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
